@@ -265,6 +265,16 @@ const addTiles = (i) => {
 }
 
 class Enemy {
+    ATTACK = 'attack';
+    DEATH = 'death';
+    IDLE = 'idle';
+    HURT = 'hurt';
+    WALK = 'walk';
+
+    state;
+    animateWasChanged;
+
+    startX;
     posX;
     posY;
     img;
@@ -273,15 +283,27 @@ class Enemy {
     spritePos;
     spriteMaxPos;
     timer;
+    dir;
+    sourcePath;
+
     constructor(x, y) {
         this.posX = x;
+        this.startX = this.posX;
         this.posY = y;
         this.blockSize = 96;
         this.spritePos = 0;
         this.spriteMaxPos = 3;
+        this.sourcePath = './assets/Enemies/1/';
+        this.dir = 0.5;
+
+        this.state = this.IDLE;
+        this.animateWasChanged = false;
+
 
         this.createImg();
+        this.changeAnimate(this.WALK)
         this.lifeCycle();
+
     }
     createImg() {
         this.block = document.createElement('div');
@@ -293,7 +315,7 @@ class Enemy {
         this.block.style.overflow = 'hidden';
 
         this.img = document.createElement('img');
-        this.img.src = './assets/Enemies/1/Idle.png';
+        this.img.src = this.sourcePath + 'Idle.png';
         this.img.style.position = 'absolute';
         this.img.style.left = 0;
         this.img.style.bottom = 0;
@@ -305,7 +327,36 @@ class Enemy {
     }
     lifeCycle() {
         this.timer = setInterval(() => {
+
+            if (this.animateWasChanged) {
+                this.animateWasChanged = false;
+                switch (this.state) {
+                    case this.ATTACK: {
+                        this.setAttack();
+                        break;
+                    }
+                    case this.IDLE: {
+                        this.setIdle();
+                        break;
+                    }
+                    case this.DEATH: {
+                        this.setDeath();
+                        break;
+                    }
+                    case this.HURT: {
+                        this.setHurt();
+                        break;
+                    }
+                    case this.WALK: {
+                        this.setWalk();
+                        break;
+                    }
+                    default: break;
+                }
+            }
+
             this.spritePos++;
+            this.move();
             this.animate();
         }, 150)
     }
@@ -313,20 +364,59 @@ class Enemy {
         if (this.spritePos > this.spriteMaxPos) {
             this.spritePos = 0;
         }
-        this.img.style.left = -(this.spritePos * this.blockSize) + 'px';
+        this.img.style.left =  - (this.spritePos * this.blockSize) + 'px';
     }
-
+    setAttack() {
+        this.img.src = this.sourcePath + 'Attack.png';
+        this.spriteMaxPos = 5;
+        this.img.style.width = this.blockSize *  6 + 'px';
+    }
+    setDeath() {
+        this.img.src = this.sourcePath + 'Death.png';
+        this.spriteMaxPos = 5;
+        this.img.style.width = this.blockSize * 6 + 'px';
+    }
+    setHurt() {
+        this.img.src = this.sourcePath + 'Hurt.png';
+        this.spriteMaxPos = 1;
+        this.img.style.width = this.blockSize * 2 + 'px';
+    }
+    setIdle() {
+        this.img.src = this.sourcePath + 'Idle.png';
+        this.img.style.width = this.blockSize * 4 + 'px';
+        this.spriteMaxPos = 3;
+    }
+    setWalk() {
+        this.img.src = this.sourcePath + 'Walk.png';
+        this.spriteMaxPos = 5;
+        this.img.style.width = this.blockSize * 6 + 'px';
+    }
+    changeAnimate(stateStr) {
+        this.state = stateStr;
+        this.animateWasChanged = true;
+    }
+    move() {
+        if (this.posX > (this.startX + 10)) {
+            this.dir *= -1;
+            this.img.style.transform = 'scale(-1, 1)';
+        } else if(this.posX == this.startX) {
+            this.dir = Math.abs(this.dir);
+            this.img.style.transform = 'scale(1, 1)';
+        }
+        this.posX += this.dir;
+        this.block.style.left = this.posX * 32 + 'px';
+    }
 }
 
 const start = () => {
     lifeCycle();
     for (let i = 0; i < 50; i++) {
-        /*         if ((i > 10) && (i < 17)) {
-                    continue;
-                } */
+        /* if ((i > 10) && (i < 17)) {
+            continue;
+        } */
         addTiles(i);
+        let enemy = new Enemy(10, 2);
     }
-    let enemy = new Enemy(10, 2);
 };
 start();
 createTilesPlatform(10, 10, 10);
