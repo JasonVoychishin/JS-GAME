@@ -17,6 +17,8 @@ let imgBlockPosition = 0;
 let x = 0;
 let halfWidth = window.screen.width / 2;
 let tileArray = [];
+let maxLives = 6;
+let lives = 3;
 let canvas = document.querySelector('#canvas');
 let fsBtn = document.querySelector('#fsbtn');
 let timer = null;
@@ -285,6 +287,7 @@ class Enemy {
     timer;
     dir;
     sourcePath;
+    stop;
 
     constructor(x, y) {
         this.posX = x;
@@ -294,11 +297,11 @@ class Enemy {
         this.spritePos = 0;
         this.spriteMaxPos = 3;
         this.sourcePath = './assets/Enemies/1/';
-        this.dir = 0.5;
+        this.dir = 1;
 
         this.state = this.IDLE;
         this.animateWasChanged = false;
-
+        this.stop = false;
 
         this.createImg();
         this.changeAnimate(this.WALK)
@@ -356,7 +359,12 @@ class Enemy {
             }
 
             this.spritePos++;
-            this.move();
+            this.checkCollide();
+            if (!this.stop) {
+                this.move();
+            } else {
+                this.changeAnimate(this.ATTACK);
+            }
             this.animate();
         }, 150)
     }
@@ -406,6 +414,65 @@ class Enemy {
         this.posX += this.dir;
         this.block.style.left = this.posX * 32 + 'px';
     }
+    checkCollide() {
+        if (heroY == this.posY){
+            if (heroX == this.posX) {
+                this.stop = true;
+                //attack left side
+            } else if (heroX == (this.posX + 2 + 'px')){
+                this.stop = true;
+                //attack right side
+            } else {
+                this.stop = false;
+                this.changeAnimate(this.WALK);
+            }
+        } else {
+            this.stop = false;
+            this.changeAnimate(this.WALK);
+        }
+    }
+}
+
+class Heart {
+    img;
+    x;
+    constructor(x, src) {
+        this.x = x;
+        this.img = document.createElement('img');
+        this.img.src = src;
+        this.img.style.position = 'absolute';
+        this.img.style.left = this.x * 32 + 'px';
+        this.img.style.bottom = ((window.screen.height / 32) - 2) * 32 + 'px';
+        this.img.style.width = 32 + 'px';
+        this.img.style.height = 32 + 'px';
+
+        canvas.appendChild(this.img);
+    }
+}
+
+class HeartEmpty extends Heart {
+    constructor(x) {
+        super(x, './assets/Hearts/heart_empty.png');
+    }
+}
+
+class HeartRed extends Heart {
+    constructor(x) {
+        super(x, './assets/Hearts/heart_red.png');
+    }
+}
+
+const addHearts = () => {
+    lives = 1;
+/*     let heartEmpty = new HeartEmpty(0);
+    let heartRed = new HeartRed(1); */
+    for (let i = 0; i < lives; i++){
+        let heartRed = new HeartRed(i);
+    }
+
+    for (let i = (maxLives - lives); (i + maxLives) > 6; i--){
+        let heartEmpty = new HeartEmpty( maxLives - i );
+    }
 }
 
 const start = () => {
@@ -416,6 +483,7 @@ const start = () => {
         } */
         addTiles(i);
         let enemy = new Enemy(10, 2);
+        addHearts();
     }
 };
 start();
