@@ -8,6 +8,7 @@ jumpBlock.style.top = `${window.screen.height / 2 - 144 / 2}px`;
 let hitBlock = document.querySelector('#hit-block');
 hitBlock.style.top = `${window.screen.height / 2 - 144 / 2}px`;
 
+let backgroundCanvas = document.querySelector('#background-canvas');
 let hero = document.querySelector('#hero');
 let rightPosition = 0;
 let imgBlock = document.querySelector('#img-block');
@@ -18,7 +19,8 @@ let x = 0;
 let halfWidth = window.screen.width / 2;
 let tileArray = [];
 let maxLives = 6;
-let lives = 3;
+let lives = 6;
+let heartsArray = [];
 let canvas = document.querySelector('#canvas');
 let fsBtn = document.querySelector('#fsbtn');
 let timer = null;
@@ -246,7 +248,7 @@ const createTile = (x, y = 1) => {
     tile.style.position = 'absolute';
     tile.style.left = x * 32 + 'px';
     tile.style.bottom = y * 32 + 'px';
-    canvas.appendChild(tile);
+    backgroundCanvas.appendChild(tile);
 
     tileArray.push([x, y]);
 }
@@ -371,13 +373,20 @@ class Enemy {
     animate() {
         if (this.spritePos > this.spriteMaxPos) {
             this.spritePos = 0;
+            if (this.state == this.ATTACK) {
+                lives--;
+                updateHearts();
+                if (lives == 0) {
+                    fall = true;
+                }
+            }
         }
-        this.img.style.left =  - (this.spritePos * this.blockSize) + 'px';
+        this.img.style.left = - (this.spritePos * this.blockSize) + 'px';
     }
     setAttack() {
         this.img.src = this.sourcePath + 'Attack.png';
         this.spriteMaxPos = 5;
-        this.img.style.width = this.blockSize *  6 + 'px';
+        this.img.style.width = this.blockSize * 6 + 'px';
     }
     setDeath() {
         this.img.src = this.sourcePath + 'Death.png';
@@ -407,7 +416,7 @@ class Enemy {
         if (this.posX > (this.startX + 10)) {
             this.dir *= -1;
             this.img.style.transform = 'scale(-1, 1)';
-        } else if(this.posX == this.startX) {
+        } else if (this.posX == this.startX) {
             this.dir = Math.abs(this.dir);
             this.img.style.transform = 'scale(1, 1)';
         }
@@ -415,11 +424,11 @@ class Enemy {
         this.block.style.left = this.posX * 32 + 'px';
     }
     checkCollide() {
-        if (heroY == this.posY){
+        if (heroY == this.posY) {
             if (heroX == this.posX) {
                 this.stop = true;
                 //attack left side
-            } else if (heroX == (this.posX + 2 + 'px')){
+            } else if (heroX == (this.posX + 2 + 'px')) {
                 this.stop = true;
                 //attack right side
             } else {
@@ -437,7 +446,7 @@ class Heart {
     img;
     x;
     constructor(x, src) {
-        this.x = x;
+        this.x = x + 1;
         this.img = document.createElement('img');
         this.img.src = src;
         this.img.style.position = 'absolute';
@@ -463,29 +472,36 @@ class HeartRed extends Heart {
 }
 
 const addHearts = () => {
-    lives = 1;
-/*     let heartEmpty = new HeartEmpty(0);
-    let heartRed = new HeartRed(1); */
-    for (let i = 0; i < lives; i++){
+    for (let i = 0; i < maxLives; i++) {
+        let heartEmpty = new HeartEmpty(i);
         let heartRed = new HeartRed(i);
+        heartsArray.push(heartRed);
+    }
+}
+
+const updateHearts = () => {
+    if (lives < 1) {
+        lives = 1;
+    }
+    for (let i = 0; i < lives; i++) {
+        heartsArray[i].img.style.display = 'block';
     }
 
-    for (let i = (maxLives - lives); (i + maxLives) > 6; i--){
-        let heartEmpty = new HeartEmpty( maxLives - i );
+    for (let i = lives; i < maxLives; i++) {
+        heartsArray[i].img.style.display = 'none';
     }
 }
 
 const start = () => {
     lifeCycle();
-    for (let i = 0; i < 50; i++) {
-        /* if ((i > 10) && (i < 17)) {
-            continue;
-        } */
+    for (let i = 0; i < (window.screen.width / 32); i++) {
         addTiles(i);
-        let enemy = new Enemy(10, 2);
-        addHearts();
     }
+    let enemy = new Enemy(10, 2);
+    addHearts();
+    updateHearts();
 };
+
 start();
 createTilesPlatform(10, 10, 10);
 createTilesPlatform(15, 5, 10);
