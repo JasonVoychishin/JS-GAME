@@ -36,6 +36,7 @@ let heroX = Math.floor((Number.parseInt(imgBlock.style.left) + 32) / 32);
 let heroY = Math.floor(Number.parseInt(imgBlock.style.bottom) / 32);
 
 let info = document.querySelector('#info');
+info.style.display = 'none';
 //Функции
 
 const updateHeroXY = () => {
@@ -80,6 +81,7 @@ const rightHandler = () => {
         imgBlock.style.left = `${imgBlockPosition * 20}px`;
 
         checkFalling();
+        wasHeroHit = false;
     }
 
 }
@@ -97,6 +99,7 @@ const leftHandler = () => {
         imgBlock.style.left = `${imgBlockPosition * 20}px`;
 
         checkFalling();
+        wasHeroHit = false;
     }
 }
 
@@ -300,6 +303,7 @@ class Enemy {
     dir;
     sourcePath;
     stop;
+    lives;
 
     constructor(x, y) {
         this.posX = x;
@@ -314,6 +318,7 @@ class Enemy {
         this.state = this.IDLE;
         this.animateWasChanged = false;
         this.stop = false;
+        this.lives = 30;
 
         this.createImg();
         this.changeAnimate(this.WALK)
@@ -375,14 +380,12 @@ class Enemy {
             if (!this.stop) {
                 this.move();
             } else {
-                if (this.state != this.HURT) {
-                    this.changeAnimate(this.ATTACK);
+                if (this.state != this.DEATH) {
+                    if (this.state != this.HURT) {
+                        this.changeAnimate(this.ATTACK);
+                    }
                 }
-            }
-            if (wasHeroHit) {
-                wasHeroHit = false;
-                this.changeAnimate(this.HURT);
-                this.showHurt();
+
             }
             this.animate();
         }, 150)
@@ -393,9 +396,14 @@ class Enemy {
             if (this.state === this.ATTACK) {
                 lives--;
                 updateHearts();
-                if (this.state === this.HURT) {
-                    this.changeAnimate(this.ATTACK);
-                }
+            }
+            if (this.state === this.HURT) {
+                this.changeAnimate(this.ATTACK);
+            }
+            if (this.state === this.DEATH) {
+                clearInterval(this.timer);
+                isLeftSideBlocked = false;
+                isRightSideBlocked = false;
             }
         }
         this.img.style.left = - (this.spritePos * this.blockSize) + 'px';
@@ -440,23 +448,35 @@ class Enemy {
         this.posX += this.dir;
         this.block.style.left = this.posX * 32 + 'px';
     }
+    checkHurt() {
+        if (wasHeroHit) {
+            if (this.lives <= 10) {
+                wasHeroHit = false;
+                this.changeAnimate(this.DEATH);
+            } else {
+                wasHeroHit = false;
+                this.changeAnimate(this.HURT);
+                this.showHurt();
+                this.lives -= 10;
+            }
+
+        }
+    }
     checkCollide() {
         if (heroY == this.posY) {
             if (heroX == this.posX) {
                 if (hit) {
                     this.changeAnimate(this.HURT);
-                } else {
-                    this.changeAnimate(this.ATTACK);
                 }
+                this.checkHurt();
                 isRightSideBlocked = true;
                 this.stop = true;
                 //attack left side
             } else if (heroX == (this.posX + 3 + 'px')) {
                 if (hit) {
                     this.changeAnimate(this.HURT);
-                } else {
-                    this.changeAnimate(this.ATTACK);
                 }
+                this.checkHurt();
                 isLeftSideBlocked = true;
                 this.stop = true;
                 //attack right side
@@ -478,7 +498,7 @@ class Enemy {
         let text = document.createElement('p');
         text.innerText = '-10';
         text.style.position = 'absolute';
-        text.style.left = Number.parseInt(this.block.style.left) + 50 + 'px';
+        text.style.left = (this.dir < 0) ? Number.parseInt(this.block.style.left) + 50 + 'px' : Number.parseInt(this.block.style.left) + 10 + 'px';
         text.style.bottom = Number.parseInt(this.block.style.bottom) + 32 + 'px';
         text.style.fontFamily = "'Bungee Spice',cursive";
 
