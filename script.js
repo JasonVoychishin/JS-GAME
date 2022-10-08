@@ -28,6 +28,9 @@ let direction = 'right';
 let hit = false;
 let jump = false;
 let fall = false;
+let isRightSideBlocked = false;
+let isLeftSideBlocked = false;
+let wasHeroHit = false;
 
 let heroX = Math.floor((Number.parseInt(imgBlock.style.left) + 32) / 32);
 let heroY = Math.floor(Number.parseInt(imgBlock.style.bottom) / 32);
@@ -60,36 +63,41 @@ const checkFalling = () => {
 
 const fallHandler = () => {
     heroImg.style.top = '-96px';
-    imgBlock.style.bottom = `${Number.parseInt(imgBlock.style.bottom) - 40}px`;
+    imgBlock.style.bottom = `${Number.parseInt(imgBlock.style.bottom) - 32}px`;
     checkFalling();
 }
 
 const rightHandler = () => {
-    heroImg.style.transform = 'scale(-1,1)';
-    rightPosition = rightPosition + 1;
-    imgBlockPosition = imgBlockPosition + 1;
-    if (rightPosition > 5) {
-        rightPosition = 0;
-    }
-    heroImg.style.left = `-${rightPosition * 96}px`;
-    heroImg.style.top = '-192px';
-    imgBlock.style.left = `${imgBlockPosition * 20}px`;
+    if (!isRightSideBlocked) {
+        heroImg.style.transform = 'scale(-1,1)';
+        rightPosition = rightPosition + 1;
+        imgBlockPosition = imgBlockPosition + 1;
+        if (rightPosition > 5) {
+            rightPosition = 0;
+        }
+        heroImg.style.left = `-${rightPosition * 96}px`;
+        heroImg.style.top = '-192px';
+        imgBlock.style.left = `${imgBlockPosition * 20}px`;
 
-    checkFalling();
+        checkFalling();
+    }
+
 }
 
 const leftHandler = () => {
-    heroImg.style.transform = 'scale(1,1)';
-    rightPosition = rightPosition + 1;
-    imgBlockPosition = imgBlockPosition - 1;
-    if (rightPosition > 5) {
-        rightPosition = 0;
-    }
-    heroImg.style.left = `-${rightPosition * 96}px`;
-    heroImg.style.top = '-192px';
-    imgBlock.style.left = `${imgBlockPosition * 20}px`;
+    if (!isLeftSideBlocked) {
+        heroImg.style.transform = 'scale(1,1)';
+        rightPosition = rightPosition + 1;
+        imgBlockPosition = imgBlockPosition - 1;
+        if (rightPosition > 5) {
+            rightPosition = 0;
+        }
+        heroImg.style.left = `-${rightPosition * 96}px`;
+        heroImg.style.top = '-192px';
+        imgBlock.style.left = `${imgBlockPosition * 20}px`;
 
-    checkFalling();
+        checkFalling();
+    }
 }
 
 const standHandler = () => {
@@ -148,6 +156,7 @@ const hitHandler = () => {
             if (rightPosition > 4) {
                 rightPosition = 1;
                 hit = false;
+                wasHeroHit = true;
             }
             break;
         }
@@ -156,6 +165,7 @@ const hitHandler = () => {
             if (rightPosition > 3) {
                 rightPosition = 0;
                 hit = false;
+                wasHeroHit = true;
             }
             break;
         }
@@ -265,7 +275,7 @@ const addTiles = (i) => {
     tileBlack.style.position = 'absolute';
     tileBlack.style.left = i * 32 + 'px';
     tileBlack.style.bottom = 0;
-    canvas.appendChild(tileBlack);
+    backgroundCanvas.appendChild(tileBlack);
 }
 
 class Enemy {
@@ -365,7 +375,14 @@ class Enemy {
             if (!this.stop) {
                 this.move();
             } else {
-                this.changeAnimate(this.ATTACK);
+                if (this.state != this.HURT) {
+                    this.changeAnimate(this.ATTACK);
+                }
+            }
+            if (wasHeroHit) {
+                wasHeroHit = false;
+                this.changeAnimate(this.HURT);
+                this.showHurt();
             }
             this.animate();
         }, 150)
@@ -373,11 +390,11 @@ class Enemy {
     animate() {
         if (this.spritePos > this.spriteMaxPos) {
             this.spritePos = 0;
-            if (this.state == this.ATTACK) {
+            if (this.state === this.ATTACK) {
                 lives--;
                 updateHearts();
-                if (lives == 0) {
-                    fall = true;
+                if (this.state === this.HURT) {
+                    this.changeAnimate(this.ATTACK);
                 }
             }
         }
@@ -426,19 +443,54 @@ class Enemy {
     checkCollide() {
         if (heroY == this.posY) {
             if (heroX == this.posX) {
+                if (hit) {
+                    this.changeAnimate(this.HURT);
+                } else {
+                    this.changeAnimate(this.ATTACK);
+                }
+                isRightSideBlocked = true;
                 this.stop = true;
                 //attack left side
-            } else if (heroX == (this.posX + 2 + 'px')) {
+            } else if (heroX == (this.posX + 3 + 'px')) {
+                if (hit) {
+                    this.changeAnimate(this.HURT);
+                } else {
+                    this.changeAnimate(this.ATTACK);
+                }
+                isLeftSideBlocked = true;
                 this.stop = true;
                 //attack right side
             } else {
+                isLeftSideBlocked = false;
+                isRightSideBlocked = false;
                 this.stop = false;
                 this.changeAnimate(this.WALK);
             }
         } else {
+            isLeftSideBlocked = false;
+            isRightSideBlocked = false;
             this.stop = false;
             this.changeAnimate(this.WALK);
         }
+    }
+    showHurt() {
+        let pos = 0;
+        let text = document.createElement('p');
+        text.innerText = '-10';
+        text.style.position = 'absolute';
+        text.style.left = Number.parseInt(this.block.style.left) + 50 + 'px';
+        text.style.bottom = Number.parseInt(this.block.style.bottom) + 32 + 'px';
+        text.style.fontFamily = "'Bungee Spice',cursive";
+
+        let hurtTimer = setInterval(() => {
+            text.style.bottom = Number.parseInt(text.style.bottom) + 16 + 'px';
+            if (pos > 2) {
+                clearInterval(hurtTimer);
+                text.style.display = 'none';
+            }
+            pos++;
+        }, 100);
+        canvas.appendChild(text);
     }
 }
 
