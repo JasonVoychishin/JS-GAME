@@ -346,9 +346,9 @@ heroImg.onclick = (event) => {
 }
 
 fsBtn.onclick = () => {
-    if (document.fullscreenElement) {
+    if (document.fullscreen) {
         fsBtn.src = './fullscreen.png';
-        document.exitFullscreen()
+        document.exitFullscreen();
     } else {
         canvas.requestFullscreen();
         fsBtn.src = './cancel.png';
