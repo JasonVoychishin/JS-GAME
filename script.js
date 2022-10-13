@@ -12,7 +12,7 @@ let backgroundCanvas = document.querySelector('#background-canvas');
 let hero = document.querySelector('#hero');
 let rightPosition = 0;
 let imgBlock = document.querySelector('#img-block');
-imgBlock.style.bottom = '64px';
+imgBlock.style.bottom = '32px';
 imgBlock.style.left = '0px';
 let imgBlockPosition = 0;
 let x = 0;
@@ -39,6 +39,16 @@ let heroY = Math.floor(Number.parseInt(imgBlock.style.bottom) / 32);
 
 let info = document.querySelector('#info');
 info.style.display = 'none';
+
+let f1WallArray = [[-10, -1], [14, 32], [42, 53], [63, 75], [92, 105], [119, 129]];
+let f2WallArray = [[48, 63]];
+let isWallRight = false;
+let isWallLeft = false;
+let heroStep = 3;
+
+
+
+
 //Функции
 
 
@@ -50,6 +60,14 @@ const moveWorldLeft = () => {
         elem[0] = elem[0] - 1
     });
     enemiesArray.map(elem => elem.moveLeft());
+    f1WallArray.map(elem => {
+        elem[0] -= 1;
+        elem[1] -= 1;
+    });
+    f2WallArray.map(elem => {
+        elem[0] -= 1;
+        elem[1] -= 1;
+    });
 }
 
 const moveWorldRight = () => {
@@ -60,6 +78,14 @@ const moveWorldRight = () => {
         elem[0] = elem[0] + 1
     });
     enemiesArray.map(elem => elem.moveRight());
+    f1WallArray.map(elem => {
+        elem[0] += 1;
+        elem[1] += 1;
+    });
+    f2WallArray.map(elem => {
+        elem[0] += 1;
+        elem[1] += 1;
+    });
 }
 
 const updateHeroXY = () => {
@@ -91,8 +117,44 @@ const fallHandler = () => {
     checkFalling();
 }
 
+const checkRightWallCollide = () => {
+    isWallLeft = false;
+    isWallRight = false;
+    if (heroY = 1) {
+        f1WallArray.map(elem => {
+            if (heroX === elem[0] - 2) {
+                isWallRight = true;
+            }
+        });
+    } else if (heroY = 5) {
+        f2WallArray.map(elem => {
+            if (heroX === elem[0] - 1) {
+                isWallRight = true;
+            }
+        });
+    }
+};
+
+const checkLeftWallCollide = () => {
+    isWallLeft = false;
+    isWallRight = false;
+    if (heroY === 1) {
+        f1WallArray.map(elem => {
+            if (heroX === elem[1] + 1) {
+                isWallLeft = true;
+            }
+        });
+    } else if (heroY = 5) {
+        f2WallArray.map(elem => {
+            if (heroX === elem[1] + 1) {
+                isWallLeft = true;
+            }
+        });
+    }
+}
+
 const rightHandler = () => {
-    if (!isRightSideBlocked) {
+    if (!isRightSideBlocked && !isWallRight) {
         heroImg.style.transform = 'scale(-1,1)';
         rightPosition = rightPosition + 1;
         imgBlockPosition = imgBlockPosition + 1;
@@ -101,7 +163,7 @@ const rightHandler = () => {
         }
         heroImg.style.left = `-${rightPosition * 96}px`;
         heroImg.style.top = '-192px';
-        imgBlock.style.left = `${imgBlockPosition * 20}px`;
+        imgBlock.style.left = `${imgBlockPosition * heroStep}px`;
 
         checkFalling();
         wasHeroHit = false;
@@ -111,7 +173,7 @@ const rightHandler = () => {
 }
 
 const leftHandler = () => {
-    if (!isLeftSideBlocked) {
+    if (!isLeftSideBlocked && !isWallLeft) {
         heroImg.style.transform = 'scale(1,1)';
         rightPosition = rightPosition + 1;
         imgBlockPosition = imgBlockPosition - 1;
@@ -120,7 +182,7 @@ const leftHandler = () => {
         }
         heroImg.style.left = `-${rightPosition * 96}px`;
         heroImg.style.top = '-192px';
-        imgBlock.style.left = `${imgBlockPosition * 20}px`;
+        imgBlock.style.left = `${imgBlockPosition * heroStep}px`;
 
         checkFalling();
         wasHeroHit = false;
@@ -145,27 +207,36 @@ const standHandler = () => {
             break;
         }
         default: break;
-            checkFalling();
     }
 
     rightPosition = rightPosition + 1;
     heroImg.style.left = `-${rightPosition * 96}px`;
     heroImg.style.top = '0px';
+    checkFalling();
 }
 
 let onTouchStart = (event) => {
     clearInterval(timer);
     if (event.type === 'mousedown') {
         x = event.screenX;
-    } else {
-        console.log(event);
+    } else if (event.type === 'keydown') {
+        if (event.keyCode === 68) {
+            x = halfWidth + 1;
+        } else if (event.keyCode === 65) {
+            x = halfWidth - 1;
+        } else {
+            removeEventListener('keydown');
+        }
+    }
+    else {
         x = event.touches[0].screenX;
     };
     timer = setInterval(() => {
         if (x > halfWidth) {
             direction = 'right';
-            rightHandler()
-        } else {
+            rightHandler();
+        }
+        else if (x < halfWidth) {
             direction = 'left';
             leftHandler();
         }
@@ -205,27 +276,31 @@ const hitHandler = () => {
 }
 
 const jumpHandler = () => {
+    isWallLeft = false;
+    isWallRight = false;
     switch (direction) {
         case 'right': {
             heroImg.style.transform = 'scale(-1,1)';
+            checkRightWallCollide();
             if (rightPosition > 4) {
                 rightPosition = 1;
                 jump = false;
                 imgBlock.style.bottom = `${Number.parseInt(imgBlock.style.bottom) + 160}px`;
-                imgBlockPosition = imgBlockPosition + 10;
-                imgBlock.style.left = `${imgBlockPosition * 20}px`;
+                imgBlockPosition = imgBlockPosition + 15;
+                imgBlock.style.left = `${imgBlockPosition * heroStep}px`;
             }
             checkFalling()
             break;
         }
         case 'left': {
             heroImg.style.transform = 'scale(1,1)';
+            checkLeftWallCollide();
             if (rightPosition > 3) {
                 rightPosition = 0;
                 jump = false;
                 imgBlock.style.bottom = `${Number.parseInt(imgBlock.style.bottom) + 160}px`;
                 imgBlockPosition = imgBlockPosition - 10;
-                imgBlock.style.left = `${imgBlockPosition * 20}px`;
+                imgBlock.style.left = `${imgBlockPosition * heroStep}px`;
             }
             checkFalling();
             break;
@@ -256,8 +331,13 @@ const lifeCycle = () => {
 
 window.onmousedown = onTouchStart;
 window.onmouseup = onTouchEnd;
-window.ontouchstart = onTouchStart;
-window.ontouchend = onTouchEnd;
+window.addEventListener('touchstart', onTouchStart);
+window.addEventListener('touchend', onTouchEnd);
+window.addEventListener('keydown', onTouchStart);
+window.addEventListener('keyup', onTouchEnd);
+window.addEventListener('contextmenu', function (e) {
+    e.preventDefault();
+})
 
 heroImg.onclick = (event) => {
     event.preventDefault();
@@ -273,13 +353,29 @@ fsBtn.onclick = () => {
     }
 }
 
+
 jumpBlock.onclick = () => {
     jump = true;
-};
+}
+window.addEventListener('keydown', (e) => {
+    if (e.keyCode === 32) {
+        jump = true;
+    }
+
+})
+
+
 
 hitBlock.onclick = () => {
     hit = true;
 };
+window.addEventListener('keydown', (e) => {
+    if (e.keyCode === 13) {
+        hit = true;
+    }
+})
+
+
 
 const createTile = (x, y = 1) => {
     let tile = document.createElement('img');
@@ -621,7 +717,7 @@ const createBackImg = (i) => {
     let img = document.createElement('img');
     img.src = './assets/2 Background/Day/Background.png';
     img.style.position = 'absolute';
-    img.style.left = i * window.screen.width + 'px';
+    img.style.left = (i * window.screen.width) - 32 + 'px';
     img.style.bottom = '32px';
     img.style.width = window.screen.width + 'px';
     backgroundCanvas.appendChild(img);
@@ -629,7 +725,7 @@ const createBackImg = (i) => {
 }
 
 const addBackgroundImages = () => {
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 3; i++) {
         createBackImg(i);
     }
 }
@@ -640,7 +736,7 @@ const createImgEl = (src, x, y) => {
     img.style.position = 'absolute';
     img.style.left = x * 32 + 'px';
     img.style.bottom = y * 32 + 'px';
-    img.style.transform = 'scale(2,2) translate(-25%,-25%)'; 
+    img.style.transform = 'scale(2,2) translate(-25%,-25%)';
     backgroundCanvas.appendChild(img);
     objectsArray.push(img);
 
@@ -649,34 +745,34 @@ const createImgEl = (src, x, y) => {
 const addDecorationElements = (f1, f2, f3) => {
     let basePath = './assets/3 Objects/';
 
-//Trees
+    //Trees
     createImgEl(basePath + 'Other/Tree4.png', 4, f1);
     createImgEl(basePath + 'Other/Tree2.png', 35, f1);
     createImgEl(basePath + 'Other/Tree3.png', 78, f1);
     createImgEl(basePath + 'Other/Tree4.png', 108, f1);
     createImgEl(basePath + 'Other/Tree1.png', 65, f2);
-//Stones
+    //Stones
     createImgEl(basePath + 'Stones/4.png', 10, f1);
     createImgEl(basePath + 'Stones/5.png', 111, f1);
     createImgEl(basePath + 'Stones/3.png', 38, f1);
     createImgEl(basePath + 'Stones/6.png', 102, f3);
-//Ramp
-    createImgEl(basePath + 'Other/Ramp1.png',22, f2);
+    //Ramp
+    createImgEl(basePath + 'Other/Ramp1.png', 22, f2);
     createImgEl(basePath + 'Other/Ramp2.png', 26, f2);
     createImgEl(basePath + 'Other/Ramp1.png', 95, f2);
     createImgEl(basePath + 'Other/Ramp2.png', 99, f2);
     createImgEl(basePath + 'Other/Ramp1.png', 45, f2);
     createImgEl(basePath + 'Other/Ramp2.png', 49, f2);
-//Bushes
+    //Bushes
     createImgEl(basePath + 'Bushes/17.png', 84, f1);
     createImgEl(basePath + 'Bushes/17.png', 13, f3);
     createImgEl(basePath + 'Bushes/18.png', 19, f2);
     createImgEl(basePath + 'Bushes/18.png', 50, f2);
     createImgEl(basePath + 'Bushes/18.png', 69, f2);
     createImgEl(basePath + 'Bushes/18.png', 100, f2);
-//Fountain 
+    //Fountain 
     createImgEl(basePath + 'Fountain/2.png', 116, f1);
-//Boxes
+    //Boxes
     createImgEl(basePath + 'Other/Box.png', 84, f1);
     createImgEl(basePath + 'Other/Box.png', 48, f2);
     createImgEl(basePath + 'Other/Box.png', 14, f3);
@@ -694,7 +790,7 @@ const buildLevel = () => {
     createTilesPlatform(0, 14, floor1);
     createTilesPlatform(33, 41, floor1);
     createTilesPlatform(76, 91, floor1);
-    createTilesPlatform(106, 119, floor1);
+    createTilesPlatform(106, 132, floor1);
 
     createTilesPlatform(15, 32, floor2);
     createTilesPlatform(42, 53, floor2);
