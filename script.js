@@ -168,6 +168,7 @@ const rightHandler = () => {
         checkFalling();
         wasHeroHit = false;
         moveWorldLeft();
+        checkRightWallCollide();
     }
 
 }
@@ -187,6 +188,7 @@ const leftHandler = () => {
         checkFalling();
         wasHeroHit = false;
         moveWorldRight();
+        checkLeftWallCollide();
     }
 }
 
