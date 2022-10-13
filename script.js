@@ -337,16 +337,14 @@ window.addEventListener('touchstart', onTouchStart);
 window.addEventListener('touchend', onTouchEnd);
 window.addEventListener('keydown', onTouchStart);
 window.addEventListener('keyup', onTouchEnd);
-window.addEventListener('contextmenu', function (e) {
-    e.preventDefault();
-})
 
 heroImg.onclick = (event) => {
     event.preventDefault();
 }
 
-fsBtn.onclick = () => {
-    if (document.fullscreen) {
+fsBtn.onclick = (e) => {
+    e.preventDefault();
+    if (document.fullscreenElement) {
         fsBtn.src = './fullscreen.png';
         document.exitFullscreen();
     } else {
